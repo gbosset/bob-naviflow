@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOB NaviFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f0f4f8; --surface:#ffffff; --surface2:#e8eef5; --wave:#dde5ef;
+    --accent:#0077cc; --accent2:#e85d00; --success:#00915a; --danger:#cc1e1e; --warn:#b87000;
+    --text:#0a1628; --muted:#4a6080; --border:#c8d6e5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+  /* HEADER */
+  header{position:sticky;top:0;z-index:100;background:var(--accent);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+  .logo{font-family:'Teko',sans-serif;font-size:22px;font-weight:600;letter-spacing:1px;color:#fff;flex-shrink:0;line-height:1;}
+  .logo span{color:rgba(255,255,255,.7);}
+  .badges{display:flex;gap:5px;}
+  .badge{display:flex;align-items:center;gap:5px;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;white-space:nowrap;cursor:pointer;border:2px solid transparent;}
+  .badge-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .badge-sync{background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.4);cursor:default;}
+  .badge-off{background:#fff;color:var(--danger);border-color:var(--danger);}
+  .badge-on{background:#fff;color:var(--success);border-color:var(--success);}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .pulse{animation:pulse 1.5s infinite;}
+
+  main{padding:12px;max-width:480px;margin:0 auto;}
+
+  /* BLE BANNER */
+  .ble-banner{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:10px 13px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .ble-left{display:flex;align-items:center;gap:7px;color:var(--muted);flex:1;min-width:0;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .btn-ble{padding:7px 14px;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:#fff;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer;flex-shrink:0;transition:all .2s;}
+  .btn-ble:hover{background:#0066bb;}
+  .btn-ble:disabled{opacity:.4;cursor:not-allowed;}
+
+  .section-title{font-family:'Teko',sans-serif;font-size:13px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;font-weight:500;}
+  .tabs{display:flex;background:var(--wave);border-radius:12px;padding:3px;margin-bottom:12px;border:2px solid var(--border);}
+  .tab{flex:1;padding:9px 4px;border-radius:9px;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+  .tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(0,119,204,.3);}
+  .tab-content{display:none;}
+  .tab-content.active{display:block;}
+
+  .card{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+  .card-orange{border-color:#f0a070;}
+
+  /* BIG LIVE CONSUMPTION */
+  .live-card{background:var(--accent);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 3px 12px rgba(0,119,204,.3);}
+  .live-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .live-label{font-family:'Teko',sans-serif;font-size:13px;letter-spacing:3px;color:rgba(255,255,255,.7);text-transform:uppercase;}
+  .live-status{font-size:11px;font-weight:700;color:rgba(255,255,255,.8);}
+  .live-main{text-align:center;margin-bottom:14px;}
+  .live-value{font-family:'Teko',sans-serif;font-size:96px;font-weight:600;color:#fff;line-height:.9;display:block;}
+  .live-unit{font-family:'DM Sans',sans-serif;font-size:16px;color:rgba(255,255,255,.75);font-weight:500;}
+  .live-sub{display:flex;gap:8px;}
+  .live-sub-item{flex:1;background:rgba(255,255,255,.15);border-radius:10px;padding:10px 6px;text-align:center;border:1px solid rgba(255,255,255,.25);}
+  .live-sub-val{font-family:'Teko',sans-serif;font-size:28px;color:#fff;line-height:1;display:flex;align-items:baseline;justify-content:center;gap:2px;}
+  .live-sub-unit{font-size:11px;color:rgba(255,255,255,.7);}
+  .live-sub-label{font-size:10px;color:rgba(255,255,255,.65);margin-top:2px;text-transform:uppercase;letter-spacing:1px;}
+
+  /* FUEL GAUGE */
+  .fuel-card{background:var(--surface);border:2px solid #f0a070;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+  .fuel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .fuel-title{font-family:'Teko',sans-serif;font-size:13px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;font-weight:500;}
+  .fuel-info{display:flex;align-items:baseline;gap:5px;}
+  .fuel-litres{font-family:'Teko',sans-serif;font-size:32px;line-height:1;font-weight:600;}
+  .fuel-unit{font-size:13px;color:var(--muted);font-weight:500;}
+  .fuel-track{height:22px;background:var(--wave);border-radius:11px;overflow:hidden;border:2px solid var(--border);}
+  .fuel-fill{height:100%;border-radius:9px;transition:width .8s ease;}
+  .fuel-marks{display:flex;justify-content:space-between;margin-top:5px;font-size:10px;color:var(--muted);font-weight:600;}
+
+  /* PILOTS */
+  .pilots{display:flex;gap:7px;margin-bottom:11px;}
+  .pilot-btn{flex:1;padding:12px 4px;border-radius:11px;border:2px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;text-align:center;transition:all .2s;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;}
+  .pilot-btn .av{font-size:22px;display:block;margin-bottom:3px;}
+  .pilot-btn.active{border-color:var(--accent);background:#e8f3ff;color:var(--accent);}
+  .pilot-btn.locked{opacity:.4;cursor:not-allowed;}
+  .pilot-btn-r.active{border-color:var(--accent2);background:#fff3ec;color:var(--accent2);}
+
+  /* BUTTONS */
+  .action-row{display:flex;gap:8px;}
+  .btn{flex:1;padding:18px;border-radius:13px;border:none;font-family:'Teko',sans-serif;font-size:24px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 8px rgba(0,0,0,.15);}
+  .btn-go{background:var(--accent);color:#fff;}
+  .btn-stop{background:var(--success);color:#fff;}
+  .btn-go:hover{background:#0066bb;transform:translateY(-1px);}
+  .btn-stop:hover{background:#007a4d;transform:translateY(-1px);}
+  .btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;box-shadow:none!important;}
+  .btn-fuel{width:100%;padding:14px;border-radius:12px;border:none;background:var(--accent2);color:#fff;font-family:'Teko',sans-serif;font-size:20px;letter-spacing:1px;cursor:pointer;transition:all .2s;font-weight:600;box-shadow:0 3px 8px rgba(232,93,0,.25);}
+  .btn-fuel:hover{background:#d05000;transform:translateY(-1px);}
+
+  .input-row{display:flex;gap:8px;margin-bottom:11px;}
+  .input-group{flex:1;}
+  .input-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+  .input-group input{width:100%;background:var(--bg);border:2px solid var(--border);border-radius:9px;padding:10px 11px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;transition:border-color .2s;font-weight:500;}
+  .input-group input:focus{border-color:var(--accent);}
+  .input-group input::placeholder{color:#9bb0c5;}
+
+  .trip-bar{background:#e8f3ff;border:2px solid var(--accent);border-radius:11px;padding:10px 13px;margin-bottom:11px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--accent);}
+  .trip-bar.hidden{display:none;}
+
+  /* STATS */
+  .pilot-row{background:var(--surface);border:2px solid var(--border);border-radius:13px;padding:13px;display:flex;align-items:center;gap:11px;margin-bottom:9px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+  .pilot-icon{width:42px;height:42px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;border:2px solid var(--border);}
+  .pilot-info{flex:1;min-width:0;}
+  .pilot-name{font-weight:700;font-size:15px;margin-bottom:2px;}
+  .pilot-meta{font-size:11px;color:var(--muted);font-weight:500;}
+  .bar-track{height:4px;background:var(--wave);border-radius:2px;margin-top:6px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:2px;transition:width .6s ease;}
+  .pilot-nums{text-align:right;flex-shrink:0;}
+  .pilot-conso{font-family:'Teko',sans-serif;font-size:24px;line-height:1;font-weight:600;}
+  .pilot-solde{font-size:11px;margin-top:2px;font-weight:700;}
+  .solde-pos{color:var(--success);}
+  .solde-neg{color:var(--danger);}
+
+  .log-item{display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:2px solid var(--wave);}
+  .log-item:last-child{border-bottom:none;}
+  .log-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .log-info{flex:1;}
+  .log-pilot{font-size:13px;font-weight:700;}
+  .log-time{font-size:11px;color:var(--muted);font-weight:500;}
+  .log-val{font-family:'Teko',sans-serif;font-size:18px;color:var(--accent);font-weight:600;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(10,22,40,.6);backdrop-filter:blur(6px);z-index:150;display:flex;align-items:flex-end;justify-content:center;}
+  .modal-overlay.hidden{display:none;}
+  .modal{background:var(--surface);border:2px solid var(--border);border-radius:20px 20px 0 0;padding:24px 20px 34px;width:100%;max-width:480px;animation:slideUp .28s ease;box-shadow:0 -4px 20px rgba(0,0,0,.15);}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .modal-title{font-family:'Teko',sans-serif;font-size:26px;margin-bottom:4px;color:var(--text);font-weight:600;}
+  .modal-sub{font-size:13px;color:var(--muted);margin-bottom:18px;font-weight:500;}
+  .modal-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:2px solid var(--wave);font-size:14px;}
+  .modal-row .lbl{color:var(--muted);font-weight:500;}
+  .modal-row .val{font-weight:700;}
+  .modal-actions{display:flex;gap:9px;margin-top:16px;}
+  .btn-cancel{flex:1;padding:13px;border-radius:12px;border:2px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'Teko',sans-serif;font-size:18px;cursor:pointer;font-weight:500;}
+
+  .toast-wrap{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:7px;pointer-events:none;}
+  .toast{background:var(--text);color:#fff;border-radius:12px;padding:10px 18px;font-size:13px;font-weight:600;white-space:nowrap;animation:toastIn .3s ease,toastOut .3s ease 2.7s forwards;box-shadow:0 4px 12px rgba(0,0,0,.3);}
+  @keyframes toastIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes toastOut{from{opacity:1}to{opacity:0}}
+  .btn-edit{background:transparent;border:none;font-size:16px;cursor:pointer;padding:4px;opacity:.6;flex-shrink:0;}
+  .btn-edit:hover{opacity:1;}
+  .empty{text-align:center;padding:26px 14px;color:var(--muted);font-size:14px;font-weight:500;}
+  .empty .icon{font-size:30px;margin-bottom:7px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">BOB <span>NAVIFLOW</span></div>
+  <div class="badges">
+    <div class="badge badge-sync" id="badgeSync">
+      <div class="badge-dot" style="background:#fff"></div>
+      <span>Sync…</span>
+    </div>
+    <div class="badge badge-off" id="badgeBLE" onclick="connectBLE()" title="Connecter NaviFlow">
+      <div class="badge-dot" style="background:var(--danger)"></div>
+      <span id="bleLabel">Non connecté</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="ble-banner" id="bleBanner">
+    <div class="ble-left">📶 <span id="bleBannerText">Appuie pour connecter le NaviFlow</span></div>
+    <button class="btn-ble" id="btnBLE" onclick="connectBLE()">Scanner</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('trajet')">⚓ Trajet</button>
+    <button class="tab" onclick="switchTab('ravit')">⛽ Plein</button>
+    <button class="tab" onclick="switchTab('stats')">📊 Bilan</button>
+  </div>
+
+  <!-- TAB TRAJET -->
+  <div class="tab-content active" id="tab-trajet">
+
+    <!-- BIG LIVE CARD -->
+    <div class="live-card">
+      <div class="live-top">
+        <div class="live-label">⚡ Consommation live</div>
+        <div class="live-status" id="liveStatus">NaviFlow non connecté</div>
+      </div>
+      <div class="live-main">
+        <span class="live-value" id="gLH">--</span>
+        <span class="live-unit">litres / heure</span>
+      </div>
+      <div class="live-sub">
+        <div class="live-sub-item">
+          <div class="live-sub-val"><span id="gSession">--</span><span class="live-sub-unit">L</span></div>
+          <div class="live-sub-label">Session</div>
+        </div>
+        <div class="live-sub-item">
+          <div class="live-sub-val"><span id="gSpeed">--</span><span class="live-sub-unit">km/h</span></div>
+          <div class="live-sub-label">Vitesse</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FUEL GAUGE après les boutons -->
+    <div class="trip-bar hidden" id="tripBar">
+      🟢 <span id="tripBarText">Trajet en cours…</span>
+    </div>
+
+    <div class="section-title">Pilote(s) — sélection multiple</div>
+    <div class="card">
+      <div class="pilots" id="pilotBtnsT"></div>
+      <div class="action-row">
+        <button class="btn btn-go"   id="btnDepart"  onclick="startTrip()" disabled>▶ DÉPART</button>
+        <button class="btn btn-stop" id="btnArrivee" onclick="endTrip()"   disabled>◼ ARRIVÉE</button>
+      </div>
+    </div>
+
+    <div class="fuel-card">
+      <div class="fuel-header">
+        <div class="fuel-title">⛽ Réservoir — 200 L</div>
+        <div class="fuel-info">
+          <div class="fuel-litres" id="fuelLitres">--</div>
+          <div class="fuel-unit">L restants</div>
+        </div>
+      </div>
+      <div class="fuel-track">
+        <div class="fuel-fill" id="fuelFill" style="width:0%"></div>
+      </div>
+      <div class="fuel-marks">
+        <span>0</span><span>50</span><span>100</span><span>150</span><span>200 L</span>
+      </div>
+    </div>
+
+    <div class="section-title">Trajets récents</div>
+    <div class="card" id="trajetLog"><div class="empty"><div class="icon">⚓</div>Aucun trajet</div></div>
+
+    <div style="text-align:center;margin-bottom:24px">
+      <button onclick="openManual()" style="background:transparent;border:2px solid var(--border);color:var(--muted);border-radius:9px;padding:8px 16px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;">✏️ Saisie manuelle</button>
+    </div>
+  </div>
+
+  <!-- TAB RAVIT -->
+  <div class="tab-content" id="tab-ravit">
+    <div class="section-title">Qui ravitaille ?</div>
+    <div class="card card-orange">
+      <div class="pilots" id="pilotBtnsR"></div>
+      <div class="input-row">
+        <div class="input-group">
+          <label>Litres ajoutés</label>
+          <input type="number" id="inLitres" placeholder="ex: 40" min="0" step="0.5">
+        </div>
+        <div class="input-group">
+          <label>Prix / litre (CHF)</label>
+          <input type="number" id="inPrix" placeholder="ex: 2.35" min="0" step="0.01">
+        </div>
+      </div>
+      <button class="btn-fuel" onclick="addFuel()">⛽ ENREGISTRER LE PLEIN</button>
+    </div>
+    <div class="section-title">Historique pleins</div>
+    <div class="card" id="ravitLog"><div class="empty"><div class="icon">⛽</div>Aucun ravitaillement</div></div>
+  </div>
+
+  <!-- TAB STATS -->
+  <div class="tab-content" id="tab-stats">
+    <div class="section-title">Bilan par pilote</div>
+    <div id="statsContainer"></div>
+  </div>
+</main>
+
+<!-- MODAL ARRIVÉE -->
+<div class="modal-overlay hidden" id="modalEnd">
+  <div class="modal">
+    <div class="modal-title">Fin du trajet</div>
+    <div class="modal-sub">Confirme pour enregistrer</div>
+    <div class="modal-row"><span class="lbl">Pilote(s)</span><span class="val" id="mPilot">—</span></div>
+    <div class="modal-row"><span class="lbl">Durée</span><span class="val" id="mDuree">—</span></div>
+    <div class="modal-row"><span class="lbl">Consommation totale</span><span class="val" id="mConso" style="color:var(--accent)">—</span></div>
+    <div class="modal-row" id="mShareRow"><span class="lbl">Par pilote</span><span class="val" id="mShare" style="color:var(--muted)">—</span></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-stop" style="flex:2" onclick="confirmEnd()">✓ CONFIRMER</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SAISIE MANUELLE -->
+<div class="modal-overlay hidden" id="modalManual">
+  <div class="modal">
+    <div class="modal-title">Saisie manuelle</div>
+    <div class="modal-sub">Ajouter une sortie passée</div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Date</label>
+        <input type="date" id="mDate">
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Heure départ</label>
+        <input type="time" id="mHDepart">
+      </div>
+      <div class="input-group">
+        <label>Heure arrivée</label>
+        <input type="time" id="mHArrivee">
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Litres consommés</label>
+        <input type="number" id="mLitres" placeholder="ex: 12.5" min="0" step="0.1">
+      </div>
+    </div>
+    <div class="section-title" style="margin-top:4px">Pilote(s)</div>
+    <div class="pilots" id="pilotBtnsM" style="margin-bottom:16px"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeManual()">Annuler</button>
+      <button class="btn btn-go" style="flex:2" onclick="saveManual()">✓ ENREGISTRER</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIT TRAJET -->
+<div class="modal-overlay hidden" id="modalEditTrajet">
+  <div class="modal">
+    <div class="modal-title">Modifier le trajet</div>
+    <div class="modal-sub" id="editTrajetSub"></div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Litres consommés</label>
+        <input type="number" id="editTrajetConso" min="0" step="0.1">
+      </div>
+      <div class="input-group">
+        <label>Durée (min)</label>
+        <input type="number" id="editTrajetDuree" min="1" step="1">
+      </div>
+    </div>
+    <div class="section-title" style="margin-top:4px">Pilote(s)</div>
+    <div class="pilots" id="pilotBtnsEdit" style="margin-bottom:16px"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" style="color:var(--danger);border-color:#ffb3b3" onclick="deleteTrajet()">🗑 Supprimer</button>
+      <button class="btn-cancel" onclick="closeEditTrajet()">Annuler</button>
+      <button class="btn btn-go" style="flex:2" onclick="saveEditTrajet()">✓ Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIT RAVIT -->
+<div class="modal-overlay hidden" id="modalEditRavit">
+  <div class="modal">
+    <div class="modal-title">Modifier le plein</div>
+    <div class="modal-sub" id="editRavitSub"></div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Litres</label>
+        <input type="number" id="editRavitLitres" min="0" step="0.5">
+      </div>
+      <div class="input-group">
+        <label>Prix / litre (CHF)</label>
+        <input type="number" id="editRavitPrix" min="0" step="0.01" placeholder="optionnel">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" style="color:var(--danger);border-color:#ffb3b3" onclick="deleteRavit()">🗑 Supprimer</button>
+      <button class="btn-cancel" onclick="closeEditRavit()">Annuler</button>
+      <button class="btn btn-go" style="flex:2" onclick="saveEditRavit()">✓ Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, doc, setDoc, deleteDoc, query, orderBy }
+  from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+const db = getFirestore(initializeApp({
+  apiKey: "AIzaSyDpTsXrgD0_3n_JGd3waLUc2ua2Spfxols",
+  authDomain: "naviflow-2e36d.firebaseapp.com",
+  projectId: "naviflow-2e36d",
+  storageBucket: "naviflow-2e36d.firebasestorage.app",
+  messagingSenderId: "728527099791",
+  appId: "1:728527099791:web:088fcd5554b30d14d1ddfa"
+}));
+
+const NF_SERVICE = '00002220-0000-1000-8000-00805f9b34fb';
+const NF_NOTIFY  = '00002221-0000-1000-8000-00805f9b34fb';
+const NF_WRITE   = '00002222-0000-1000-8000-00805f9b34fb';
+const NF_PW      = '2466';
+const TANK_MAX   = 200;
+
+const PILOTS = [
+  { id:'p1', name:'GreG',  emoji:'🚤', color:'#0077cc' },
+  { id:'p2', name:'Steph', emoji:'⚓', color:'#00915a' },
+  { id:'p3', name:'Fred',  emoji:'🌊', color:'#b87000' },
+];
+
+let selT = new Set(['p1']), selR = 'p1', selM = new Set(['p1']);
+let tripActive=false, tripStart=null, tripStartL=0;
+let nfTotal=0, bleOK=false, nfBuffer='';
+let trajets=[], ravits=[];
+let bleDevice=null, bleChar2221=null, bleChar2222=null;
+
+// ── FUEL GAUGE ────────────────────────────────────────────
+function calcTank() {
+  const apport = ravits.reduce((s,r)=>s+r.litres,0);
+  const conso  = trajets.reduce((s,t)=>s+t.conso,0);
+  return Math.max(0, Math.min(TANK_MAX, apport - conso));
+}
+
+function updateFuelGauge() {
+  const litres = calcTank();
+  const pct    = Math.round((litres / TANK_MAX) * 100);
+  const fill   = document.getElementById('fuelFill');
+  const litEl  = document.getElementById('fuelLitres');
+  if (!fill || !litEl) return;
+  fill.style.width = pct + '%';
+  litEl.textContent = litres.toFixed(1);
+  const color = pct > 50 ? '#00915a' : pct > 20 ? '#b87000' : '#cc1e1e';
+  fill.style.background = color;
+  litEl.style.color = color;
+}
+
+// ── BLE ──────────────────────────────────────────────────
+window.connectBLE = async () => {
+  if (!navigator.bluetooth) { toast('❌ Utilise Chrome sur Android'); return; }
+  txt('bleBannerText','Recherche du NaviFlow…');
+  document.getElementById('btnBLE').disabled = true;
+  try {
+    bleDevice = await navigator.bluetooth.requestDevice({
+      filters:[{namePrefix:'naviflow'},{namePrefix:'NaviFlow'},{namePrefix:'NF_'}],
+      optionalServices:[NF_SERVICE]
+    });
+    txt('bleBannerText',`Connexion à ${bleDevice.name}…`);
+    bleDevice.addEventListener('gattserverdisconnected', onBLEDisconnect);
+    const server  = await bleDevice.gatt.connect();
+    const service = await server.getPrimaryService(NF_SERVICE);
+    bleChar2221   = await service.getCharacteristic(NF_NOTIFY);
+    await bleChar2221.startNotifications();
+    bleChar2221.addEventListener('characteristicvaluechanged', onBLEData);
+    try { bleChar2222 = await service.getCharacteristic(NF_WRITE); } catch {}
+    bleOK = true;
+    setBLEBadge('on');
+    txt('bleBannerText',`✓ ${bleDevice.name} connecté`);
+    txt('liveStatus','● Live');
+    document.getElementById('btnBLE').textContent = 'Déconnecter';
+    document.getElementById('btnBLE').disabled = false;
+    document.getElementById('btnBLE').onclick = disconnectBLE;
+    updateTripUI();
+    setTimeout(sendActivation, 500);
+    toast('✅ NaviFlow connecté !');
+  } catch(err) {
+    bleOK = false; setBLEBadge('off');
+    document.getElementById('btnBLE').disabled = false;
+    txt('bleBannerText','Connexion annulée — réessaie');
+    if (err.name !== 'NotFoundError') toast('❌ ' + err.message);
+  }
+};
+
+window.disconnectBLE = () => { if (bleDevice?.gatt.connected) bleDevice.gatt.disconnect(); };
+
+function onBLEDisconnect() {
+  bleOK = false; setBLEBadge('off');
+  txt('bleBannerText','NaviFlow déconnecté — reconnexion…');
+  txt('liveStatus','Non connecté');
+  updateTripUI();
+  retryReconnect(1);
+}
+
+async function retryReconnect(attempt) {
+  if (bleOK || attempt > 5) {
+    if (!bleOK) {
+      txt('bleBannerText','Reconnexion échouée — appuie sur Scanner');
+      document.getElementById('btnBLE').textContent = 'Scanner';
+      document.getElementById('btnBLE').onclick = connectBLE;
+      toast('⚠️ NaviFlow déconnecté');
+    }
+    return;
+  }
+  txt('bleBannerText',`Reconnexion (${attempt}/5)…`);
+  try {
+    const server  = await bleDevice.gatt.connect();
+    const service = await server.getPrimaryService(NF_SERVICE);
+    bleChar2221   = await service.getCharacteristic(NF_NOTIFY);
+    await bleChar2221.startNotifications();
+    bleChar2221.addEventListener('characteristicvaluechanged', onBLEData);
+    try { bleChar2222 = await service.getCharacteristic(NF_WRITE); } catch {}
+    bleOK = true; setBLEBadge('on');
+    txt('bleBannerText',`✓ ${bleDevice.name} reconnecté`);
+    txt('liveStatus','● Live');
+    updateTripUI();
+    setTimeout(sendActivation, 500);
+    toast('✅ NaviFlow reconnecté !');
+  } catch {
+    setTimeout(() => retryReconnect(attempt+1), Math.pow(2,attempt-1)*1000);
+  }
+}
+
+async function sendActivation() {
+  if (!bleChar2222) return;
+  try { await bleChar2222.writeValue(new TextEncoder().encode(`"06*${NF_PW}`)); }
+  catch(e) { toast('⚠️ Activation : ' + e.message); }
+}
+
+function onBLEData(event) {
+  const bytes = new Uint8Array(event.target.value.buffer);
+  const ascii = Array.from(bytes).map(b=>b>=32&&b<127?String.fromCharCode(b):'').join('');
+  nfBuffer += ascii;
+  if (nfBuffer.includes('"*1')) { nfBuffer=''; return; }
+  parseNFData(nfBuffer);
+}
+
+function parseNFData(buf) {
+  const clean = buf.replace(/^"+/,'');
+  const parts = clean.split('*');
+  if (parts.length < 2) return;
+  const litresTotal = parseFloat(parts[0]);
+  const motore0     = parseFloat(parts[1]);
+  const motore1     = parts[2]!==undefined ? parseFloat(parts[2]) : 0;
+  if (isNaN(litresTotal)||isNaN(motore0)) return;
+  const totalLH = motore0+(isNaN(motore1)?0:motore1);
+  const knots   = parts[4]!==undefined ? parseFloat(parts[4]) : NaN;
+  const kmh     = !isNaN(knots)&&knots>0 ? (knots*1.852).toFixed(1) : '--';
+  txt('gLH', totalLH.toFixed(1));
+  txt('gSpeed', kmh);
+  nfTotal = litresTotal;
+  if (tripActive) txt('gSession', Math.max(0,litresTotal-tripStartL).toFixed(1));
+  nfBuffer='';
+}
+
+function setBLEBadge(s) {
+  const el=document.getElementById('badgeBLE'), dot=el.querySelector('.badge-dot'), lbl=document.getElementById('bleLabel');
+  el.className='badge';
+  if (s==='on') {
+    el.classList.add('badge-on'); dot.style.background='var(--success)'; dot.classList.add('pulse'); lbl.textContent='NaviFlow Live';
+  } else {
+    el.classList.add('badge-off'); dot.style.background='var(--danger)'; dot.classList.remove('pulse'); lbl.textContent='Non connecté';
+  }
+}
+
+async function tryAutoReconnect() {
+  try {
+    if (!navigator.bluetooth?.getDevices) return;
+    const devices = await navigator.bluetooth.getDevices();
+    const nf = devices.find(d=>d.name&&(d.name.toLowerCase().includes('naviflow')||d.name.startsWith('NF_')));
+    if (!nf) return;
+    bleDevice = nf;
+    bleDevice.addEventListener('gattserverdisconnected', onBLEDisconnect);
+    const server  = await bleDevice.gatt.connect();
+    const service = await server.getPrimaryService(NF_SERVICE);
+    bleChar2221   = await service.getCharacteristic(NF_NOTIFY);
+    await bleChar2221.startNotifications();
+    bleChar2221.addEventListener('characteristicvaluechanged', onBLEData);
+    try { bleChar2222 = await service.getCharacteristic(NF_WRITE); } catch {}
+    bleOK=true; setBLEBadge('on');
+    txt('bleBannerText',`✓ ${bleDevice.name} reconnecté`);
+    txt('liveStatus','● Live');
+    document.getElementById('btnBLE').textContent='Déconnecter';
+    document.getElementById('btnBLE').onclick=disconnectBLE;
+    updateTripUI();
+    setTimeout(sendActivation,500);
+    toast('✅ NaviFlow reconnecté !');
+  } catch {}
+}
+
+// ── FIREBASE ─────────────────────────────────────────────
+function setup() {
+  onSnapshot(doc(db,'config','activeTrip'), s => {
+    if (s.exists()) {
+      const d=s.data(); tripActive=d.active||false; tripStart=d.start||null;
+      tripStartL=d.startLitres||0;
+      if (d.pilots) selT=new Set(d.pilots);
+    } else tripActive=false;
+    updateTripUI(); renderPilots();
+  });
+  onSnapshot(query(collection(db,'trajets'),orderBy('ts','desc')), s => {
+    trajets=s.docs.map(d=>({id:d.id,...d.data()}));
+    renderTrajets(); renderStats(); updateFuelGauge();
+  });
+  onSnapshot(query(collection(db,'ravits'),orderBy('ts','desc')), s => {
+    ravits=s.docs.map(d=>({id:d.id,...d.data()}));
+    renderRavits(); renderStats(); updateFuelGauge();
+  });
+  document.getElementById('badgeSync').innerHTML=
+    '<div class="badge-dot pulse" style="background:#fff"></div> Synchronisé';
+}
+
+// ── RENDER ────────────────────────────────────────────────
+function renderPilots() {
+  const btnsT = document.getElementById('pilotBtnsT');
+  const btnsR = document.getElementById('pilotBtnsR');
+  if (!btnsT || !btnsR) return;
+
+  btnsT.innerHTML = '';
+  PILOTS.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'pilot-btn' + (selT.has(p.id) ? ' active' : '') + (tripActive ? ' locked' : '');
+    b.innerHTML = `<span class="av">${p.emoji}</span>${p.name}`;
+    b.addEventListener('click', () => toggleT(p.id));
+    btnsT.appendChild(b);
+  });
+
+  btnsR.innerHTML = '';
+  PILOTS.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'pilot-btn pilot-btn-r' + (selR === p.id ? ' active' : '');
+    b.innerHTML = `<span class="av">${p.emoji}</span>${p.name}`;
+    b.addEventListener('click', () => { selR = p.id; renderPilots(); });
+    btnsR.appendChild(b);
+  });
+}
+
+function renderTrajets() {
+  const el=document.getElementById('trajetLog');
+  if (!trajets.length){el.innerHTML='<div class="empty"><div class="icon">⚓</div>Aucun trajet</div>';return;}
+  el.innerHTML='';
+  trajets.slice(0,15).forEach(t=>{
+    const pilots=(t.pilots||[t.pilot]).map(id=>PILOTS.find(x=>x.id===id)||PILOTS[0]);
+    const names=pilots.map(p=>p.emoji+' '+p.name).join(', ');
+    const div=document.createElement('div');
+    div.className='log-item';
+    div.innerHTML=`
+      <div class="log-dot" style="background:${pilots[0].color}"></div>
+      <div class="log-info"><div class="log-pilot">${names}</div><div class="log-time">${fmtTs(t.ts)} · ${t.duree} min</div></div>
+      <div class="log-val">${t.conso} L</div>
+      <button class="btn-edit" title="Modifier">✏️</button>`;
+    div.querySelector('.btn-edit').addEventListener('click', ()=>openEditTrajet(t));
+    el.appendChild(div);
+  });
+}
+
+function renderRavits() {
+  const el=document.getElementById('ravitLog');
+  if (!ravits.length){el.innerHTML='<div class="empty"><div class="icon">⛽</div>Aucun ravitaillement</div>';return;}
+  el.innerHTML='';
+  ravits.slice(0,20).forEach(r=>{
+    const p=PILOTS.find(x=>x.id===r.pilot)||PILOTS[0];
+    const extra=r.cout>0?` · ${r.cout.toFixed(2)} CHF`:'';
+    const div=document.createElement('div');
+    div.className='log-item';
+    div.innerHTML=`
+      <div class="log-dot" style="background:var(--accent2)"></div>
+      <div class="log-info"><div class="log-pilot">${p.emoji} ${p.name}</div><div class="log-time">${fmtTs(r.ts)}${r.prix?` · ${r.prix} CHF/L`:''}${extra}</div></div>
+      <div class="log-val" style="color:var(--accent2)">+${r.litres} L</div>
+      <button class="btn-edit" title="Modifier">✏️</button>`;
+    div.querySelector('.btn-edit').addEventListener('click', ()=>openEditRavit(r));
+    el.appendChild(div);
+  });
+}
+
+function renderStats() {
+  const st={}; PILOTS.forEach(p=>{st[p.id]={conso:0,apport:0,trips:0};});
+  trajets.forEach(t=>{
+    const pilots=t.pilots||[t.pilot];
+    const share=t.conso/pilots.length;
+    pilots.forEach(id=>{if(st[id]){st[id].conso+=share;st[id].trips++;}});
+  });
+  ravits.forEach(r=>{if(st[r.pilot])st[r.pilot].apport+=r.litres;});
+  const tot=Object.values(st).reduce((s,p)=>s+p.conso,0)||1;
+  document.getElementById('statsContainer').innerHTML=PILOTS.map(p=>{
+    const s=st[p.id],solde=s.apport-s.conso,pct=Math.round(s.conso/tot*100);
+    return `<div class="pilot-row">
+      <div class="pilot-icon">${p.emoji}</div>
+      <div class="pilot-info">
+        <div class="pilot-name">${p.name}</div>
+        <div class="pilot-meta">Mis : ${s.apport.toFixed(1)} L · ${s.trips} trajet${s.trips>1?'s':''}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${p.color}"></div></div>
+      </div>
+      <div class="pilot-nums">
+        <div class="pilot-conso" style="color:${p.color}">${s.conso.toFixed(1)} L</div>
+        <div class="pilot-solde ${solde>=0?'solde-pos':'solde-neg'}">${solde>=0?'+':''}${solde.toFixed(1)} L</div>
+      </div></div>`;
+  }).join('');
+}
+
+// ── TRIP ─────────────────────────────────────────────────
+window.startTrip = async () => {
+  if (selT.size===0){toast('⚠️ Sélectionne au moins un pilote');return;}
+  await setDoc(doc(db,'config','activeTrip'),{active:true,pilots:[...selT],start:Date.now(),startLitres:nfTotal});
+  toast(`⚓ Départ — ${[...selT].map(id=>PILOTS.find(p=>p.id===id)?.name).join(' + ')}`);
+};
+
+window.endTrip = () => {
+  const pilots=[...selT].map(id=>PILOTS.find(p=>p.id===id)).filter(Boolean);
+  const conso=Math.max(0,parseFloat((nfTotal-tripStartL).toFixed(1)));
+  const duree=Math.max(1,Math.round((Date.now()-tripStart)/60000));
+  txt('mPilot',pilots.map(p=>p.emoji+' '+p.name).join(' + '));
+  txt('mDuree',duree+' min'); txt('mConso',conso+' L');
+  const shareRow=document.getElementById('mShareRow');
+  if (pilots.length>1){shareRow.style.display='';txt('mShare',(conso/pilots.length).toFixed(1)+' L / pilote');}
+  else shareRow.style.display='none';
+  document.getElementById('modalEnd').classList.remove('hidden');
+};
+
+window.confirmEnd = async () => {
+  const conso=Math.max(0,parseFloat((nfTotal-tripStartL).toFixed(1)));
+  const duree=Math.max(1,Math.round((Date.now()-tripStart)/60000));
+  await addDoc(collection(db,'trajets'),{pilots:[...selT],pilot:[...selT][0],conso,duree,ts:Date.now()});
+  await setDoc(doc(db,'config','activeTrip'),{active:false,pilots:[],start:null,startLitres:0});
+  closeModal(); toast(`✓ ${conso} L enregistrés`);
+};
+
+window.closeModal=()=>document.getElementById('modalEnd').classList.add('hidden');
+
+function updateTripUI() {
+  document.getElementById('btnDepart').disabled=!bleOK||tripActive;
+  document.getElementById('btnArrivee').disabled=!tripActive;
+  const bar=document.getElementById('tripBar');
+  if (tripActive){
+    bar.classList.remove('hidden');
+    const names=[...selT].map(id=>PILOTS.find(p=>p.id===id)?.name).filter(Boolean).join(' + ');
+    txt('tripBarText',`Trajet en cours — ${names}`);
+  } else {bar.classList.add('hidden');txt('gSession','--');}
+}
+
+window.addFuel=async()=>{
+  const l=parseFloat(document.getElementById('inLitres').value);
+  const p=parseFloat(document.getElementById('inPrix').value);
+  if(isNaN(l)||l<=0){toast('⚠️ Quantité invalide');return;}
+  const cout=isNaN(p)?0:parseFloat((l*p).toFixed(2));
+  await addDoc(collection(db,'ravits'),{pilot:selR,litres:l,prix:isNaN(p)?null:p,cout,ts:Date.now()});
+  document.getElementById('inLitres').value='';document.getElementById('inPrix').value='';
+  toast(`⛽ ${l} L — ${PILOTS.find(p=>p.id===selR)?.name}`);
+};
+
+window.toggleT=id=>{
+  if(tripActive)return;
+  if(selT.has(id)){if(selT.size===1)return;selT.delete(id);}else selT.add(id);
+  renderPilots();
+};
+window.selR_fn=id=>{selR=id;renderPilots();};
+
+// ── EDIT TRAJET ──────────────────────────────────────────
+let editingTrajet = null;
+let selEdit = new Set(['p1']);
+
+function renderEditPilots() {
+  const el = document.getElementById('pilotBtnsEdit');
+  if (!el) return;
+  el.innerHTML = '';
+  PILOTS.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'pilot-btn' + (selEdit.has(p.id) ? ' active' : '');
+    b.innerHTML = `<span class="av">${p.emoji}</span>${p.name}`;
+    b.addEventListener('click', () => {
+      if (selEdit.has(p.id)) { if (selEdit.size===1) return; selEdit.delete(p.id); }
+      else selEdit.add(p.id);
+      renderEditPilots();
+    });
+    el.appendChild(b);
+  });
+}
+
+function openEditTrajet(t) {
+  editingTrajet = t;
+  const pilots=(t.pilots||[t.pilot]).map(id=>PILOTS.find(x=>x.id===id)||PILOTS[0]);
+  document.getElementById('editTrajetSub').textContent = `${fmtTs(t.ts)}`;
+  document.getElementById('editTrajetConso').value = t.conso;
+  document.getElementById('editTrajetDuree').value = t.duree;
+  selEdit = new Set(t.pilots || [t.pilot]);
+  renderEditPilots();
+  document.getElementById('modalEditTrajet').classList.remove('hidden');
+}
+window.closeEditTrajet = () => document.getElementById('modalEditTrajet').classList.add('hidden');
+window.saveEditTrajet = async () => {
+  const conso = parseFloat(document.getElementById('editTrajetConso').value);
+  const duree = parseInt(document.getElementById('editTrajetDuree').value);
+  if (isNaN(conso)||conso<0) { toast('⚠️ Litres invalides'); return; }
+  if (isNaN(duree)||duree<1) { toast('⚠️ Durée invalide'); return; }
+  await setDoc(doc(db,'trajets',editingTrajet.id),
+    {...editingTrajet, conso, duree, pilots:[...selEdit], pilot:[...selEdit][0]}, {merge:true});
+  closeEditTrajet(); toast('✓ Trajet modifié');
+};
+window.deleteTrajet = async () => {
+  if (!confirm('Supprimer ce trajet ?')) return;
+  await deleteDoc(doc(db,'trajets',editingTrajet.id));
+  closeEditTrajet(); toast('🗑 Trajet supprimé');
+};
+
+// ── EDIT RAVIT ───────────────────────────────────────────
+let editingRavit = null;
+function openEditRavit(r) {
+  editingRavit = r;
+  const p = PILOTS.find(x=>x.id===r.pilot)||PILOTS[0];
+  document.getElementById('editRavitSub').textContent = `${p.name} · ${fmtTs(r.ts)}`;
+  document.getElementById('editRavitLitres').value = r.litres;
+  document.getElementById('editRavitPrix').value = r.prix || '';
+  document.getElementById('modalEditRavit').classList.remove('hidden');
+}
+window.closeEditRavit = () => document.getElementById('modalEditRavit').classList.add('hidden');
+window.saveEditRavit = async () => {
+  const litres = parseFloat(document.getElementById('editRavitLitres').value);
+  const prix   = parseFloat(document.getElementById('editRavitPrix').value);
+  if (isNaN(litres)||litres<=0) { toast('⚠️ Litres invalides'); return; }
+  const cout = isNaN(prix) ? 0 : parseFloat((litres*prix).toFixed(2));
+  await setDoc(doc(db,'ravits',editingRavit.id),
+    {...editingRavit, litres, prix: isNaN(prix)?null:prix, cout}, {merge:true});
+  closeEditRavit(); toast('✓ Plein modifié');
+};
+window.deleteRavit = async () => {
+  if (!confirm('Supprimer ce ravitaillement ?')) return;
+  await deleteDoc(doc(db,'ravits',editingRavit.id));
+  closeEditRavit(); toast('🗑 Plein supprimé');
+};
+
+// ── MANUAL ENTRY ─────────────────────────────────────────
+window.openManual=()=>{
+  document.getElementById('mDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('mHDepart').value='';
+  document.getElementById('mHArrivee').value='';
+  document.getElementById('mLitres').value='';
+  selM=new Set(['p1']);
+  renderManualPilots();
+  document.getElementById('modalManual').classList.remove('hidden');
+};
+window.closeManual=()=>document.getElementById('modalManual').classList.add('hidden');
+
+function renderManualPilots(){
+  const el = document.getElementById('pilotBtnsM');
+  if (!el) return;
+  el.innerHTML = '';
+  PILOTS.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'pilot-btn' + (selM.has(p.id) ? ' active' : '');
+    b.innerHTML = `<span class="av">${p.emoji}</span>${p.name}`;
+    b.addEventListener('click', () => toggleM(p.id));
+    el.appendChild(b);
+  });
+}
+window.toggleM=id=>{
+  if(selM.has(id)){if(selM.size===1)return;selM.delete(id);}else selM.add(id);
+  renderManualPilots();
+};
+window.saveManual=async()=>{
+  const date=document.getElementById('mDate').value;
+  const hD=document.getElementById('mHDepart').value;
+  const hA=document.getElementById('mHArrivee').value;
+  const litres=parseFloat(document.getElementById('mLitres').value);
+  if(!date||!hD||!hA){toast('⚠️ Date et heures obligatoires');return;}
+  if(isNaN(litres)||litres<=0){toast('⚠️ Litres invalides');return;}
+  const tsD=new Date(`${date}T${hD}`).getTime();
+  const tsA=new Date(`${date}T${hA}`).getTime();
+  if(tsA<=tsD){toast('⚠️ L\'arrivée doit être après le départ');return;}
+  await addDoc(collection(db,'trajets'),{pilots:[...selM],pilot:[...selM][0],conso:litres,duree:Math.round((tsA-tsD)/60000),ts:tsD});
+  closeManual();
+  toast(`✓ Sortie du ${new Date(tsD).toLocaleDateString('fr-CH')} enregistrée`);
+};
+
+window.confirmReset=()=>{
+  if(!confirm('Supprimer tous les trajets et ravitaillements ?'))return;
+  Promise.all([
+    ...trajets.map(t=>deleteDoc(doc(db,'trajets',t.id))),
+    ...ravits.map(r=>deleteDoc(doc(db,'ravits',r.id))),
+    setDoc(doc(db,'config','activeTrip'),{active:false})
+  ]).then(()=>toast('🗑 Réinitialisé'));
+};
+
+window.switchTab=n=>{
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['trajet','ravit','stats'][i]===n));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+n).classList.add('active');
+};
+
+function txt(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function fmtTs(ts){
+  const d=new Date(ts);
+  return d.toLocaleDateString('fr-CH',{day:'2-digit',month:'2-digit'})+' '+
+         d.toLocaleTimeString('fr-CH',{hour:'2-digit',minute:'2-digit'});
+}
+function toast(msg){
+  const el=document.createElement('div');el.className='toast';el.textContent=msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3200);
+}
+
+if(!navigator.bluetooth){
+  txt('bleBannerText','Web Bluetooth non disponible — utilise Chrome sur Android');
+  document.getElementById('btnBLE').disabled=true;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setup(); renderPilots(); renderStats(); updateFuelGauge();
+  setTimeout(tryAutoReconnect,1000);
+});
+</script>
+</body>
+</html>
